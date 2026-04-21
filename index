@@ -11,12 +11,14 @@
 body{
     margin:0;
     font-family:'Cairo';
-    background:#000;
+    overflow:hidden;
+    background:#e8f5e9;
 }
 
-/* شاشة البداية */
-.start-bg{
-    height:100vh;
+/* ===== شاشة البداية ===== */
+#screen-start{
+    position:absolute;
+    inset:0;
     display:flex;
     justify-content:center;
     align-items:center;
@@ -24,97 +26,196 @@ body{
     color:white;
 
     background:url("./assets/bg.jpg") center/cover no-repeat;
-    position:relative;
 }
 
 /* طبقة تغميق */
-.start-bg::before{
+#screen-start::before{
     content:"";
     position:absolute;
     inset:0;
-    background:linear-gradient(
-        to top,
-        rgba(0,0,0,0.85),
-        rgba(0,0,0,0.5),
-        rgba(0,0,0,0.2)
-    );
+    background:linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.4));
 }
 
 /* عناصر فوق الخلفية */
-.start-bg *{
+#screen-start *{
     position:relative;
     z-index:2;
 }
 
-/* حركة للخلفية */
-.start-bg{
+/* حركة الخلفية */
+#screen-start{
     animation:zoomBg 12s infinite alternate ease-in-out;
 }
-
 @keyframes zoomBg{
     from{background-size:100%;}
     to{background-size:110%;}
 }
 
-/* النص */
 h1{
-    font-size:3.5rem;
-    margin-bottom:10px;
+    font-size:3rem;
     text-shadow:0 10px 25px rgba(0,0,0,0.8);
 }
 
 h2{
-    margin-bottom:30px;
     text-shadow:0 5px 15px rgba(0,0,0,0.7);
 }
 
-/* الزر */
 button{
-    padding:18px 40px;
+    padding:15px 35px;
     font-size:1.5rem;
     border:none;
     border-radius:40px;
     background:#2e7d32;
     color:white;
     cursor:pointer;
-    transition:0.3s;
-}
-
-button:hover{
-    transform:scale(1.1);
-    background:#43a047;
+    margin-top:20px;
 }
 
 /* صورة عبير */
 .character{
     width:220px;
-    margin-bottom:20px;
+    margin-bottom:15px;
     filter:drop-shadow(0 20px 25px rgba(0,0,0,0.5));
-    animation:float 3s infinite ease-in-out;
 }
 
-@keyframes float{
-    0%,100%{transform:translateY(0);}
-    50%{transform:translateY(-15px);}
+/* ===== باقي اللعبة ===== */
+.screen{
+    display:none;
+    background:white;
+    padding:30px;
+    border-radius:25px;
+    max-width:900px;
+    margin:auto;
+    margin-top:50px;
+    text-align:center;
+}
+
+.screen.active{display:block}
+
+.letter{
+    display:inline-block;
+    font-size:2.5rem;
+    padding:15px;
+    margin:10px;
+    border:2px solid #2e7d32;
+    border-radius:15px;
+    cursor:pointer;
+}
+
+.team{
+    margin:10px;
+    font-size:1.2rem;
 }
 </style>
 </head>
 
 <body>
 
-<div class="start-bg">
+<!-- شاشة البداية -->
+<div id="screen-start">
     <div>
         <img src="./assets/abeer.png" class="character">
         <h1>مغامرات الكشافة عبير</h1>
         <h2>تحدي الحروف الكشفية</h2>
-
         <button onclick="startGame()">ابدأ اللعب ▶</button>
     </div>
 </div>
 
+<!-- شاشة اللعب -->
+<div id="game" class="screen">
+    <h2 id="turn"></h2>
+    <div id="letters"></div>
+</div>
+
+<!-- شاشة السؤال -->
+<div id="question" class="screen">
+    <h1 id="letter"></h1>
+    <h2 id="q"></h2>
+    <button onclick="showAnswer()">كشف الإجابة</button>
+    <div id="answer" style="display:none;margin-top:20px"></div>
+    <button onclick="result(true)">صح</button>
+    <button onclick="result(false)">خطأ</button>
+</div>
+
+<!-- النهاية -->
+<div id="end" class="screen">
+    <h1>🏆 انتهت اللعبة</h1>
+    <div id="result"></div>
+</div>
+
 <script>
+const data = [
+{l:"أ",q:"أول خطوة إسعاف؟",a:"تأمين المكان"},
+{l:"ب",q:"أداة اتجاه؟",a:"البوصلة"},
+{l:"ج",q:"تنظيف الجرح؟",a:"ماء"},
+{l:"د",q:"منع العدوى؟",a:"غسل اليدين"},
+{l:"هـ",q:"منظمة إسعاف؟",a:"الهلال الأحمر"}
+];
+
+let teams=[
+{name:"الفريق 1",score:0},
+{name:"الفريق 2",score:0}
+];
+
+let turn=0;
+let used=[];
+
 function startGame(){
-    alert("هنا تبدأ اللعبة 🎮 (اربطيه بالكود القديم)");
+document.getElementById("screen-start").style.display="none";
+document.getElementById("game").classList.add("active");
+render();
+}
+
+function render(){
+document.getElementById("turn").innerText="دور: "+teams[turn].name;
+
+let html="";
+data.forEach((d,i)=>{
+if(!used.includes(i)){
+html+=`<div class="letter" onclick="ask(${i})">${d.l}</div>`;
+}
+});
+document.getElementById("letters").innerHTML=html;
+}
+
+function ask(i){
+used.push(i);
+let d=data[i];
+
+document.getElementById("game").classList.remove("active");
+document.getElementById("question").classList.add("active");
+
+document.getElementById("letter").innerText=d.l;
+document.getElementById("q").innerText=d.q;
+document.getElementById("answer").innerText=d.a;
+}
+
+function showAnswer(){
+document.getElementById("answer").style.display="block";
+}
+
+function result(win){
+if(win) teams[turn].score+=10;
+
+turn=(turn+1)%teams.length;
+
+if(used.length===data.length){
+endGame();
+}else{
+document.getElementById("question").classList.remove("active");
+document.getElementById("game").classList.add("active");
+render();
+}
+}
+
+function endGame(){
+document.getElementById("question").classList.remove("active");
+document.getElementById("end").classList.add("active");
+
+let res=teams.sort((a,b)=>b.score-a.score)
+.map(t=>`${t.name}: ${t.score}`).join("<br>");
+
+document.getElementById("result").innerHTML=res;
 }
 </script>
 
